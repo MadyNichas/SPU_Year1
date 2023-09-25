@@ -1,0 +1,21 @@
+---
+title: "22.10.04"
+author: "Nichas, Mady"
+date: "2022-09-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+if(!require(psych)){install.packages('psych')}
+if(!require(tidyverse)){install.packages('tidyverse')}
+if(!require(dplyr)){install.packages('dplyr')}
+if(!require(lsr)){install.packages('lsr')}
+if(!require(ggpubr)){install.packages('ggpubr')}
+if(!require(knitr)){install.packages('knitr')}
+if(!require(apaTables)){install.packages('apaTables')}
+if(!require(pwr)){install.packages('pwr')}
+```
+

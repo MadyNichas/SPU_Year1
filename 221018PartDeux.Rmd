@@ -1,0 +1,186 @@
+---
+title: '221018'
+author: "Nichas, Mady"
+date: "2022-10-11"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(comment = NA) #keeps out the hashtags in the knits
+options(scipen = 999)
+```
+
+#One way ANOVA
+
+#Is there a change in student Course Evals for Psychometrics since substantive change in the traditional pedagogy? Examining data from 5 consecutive years categorized into 3 transitional categories of stable, transition, and resettled.
+
+#Dependent varible needs to be continuously scored, grouped (at least 2), and independent of eachother
+#Time to import our data!
+```{r}
+big <- readRDS("TEPPout.rds")
+```
+
+# Now we trim it down to just the Psychometrics course students
+```{r}
+JustPsychometrics <- subset(big, Course == "Psychometrics")
+```
+
+#Cleanin it up- to simplify, we are focusing predictor & continuous variable
+```{r}
+OneWay_df <-(dplyr::select (JustPsychometrics, Year, TradPed))
+```
+
+#2017 was last year of "stability"
+#2018 & 2019 were the "transition" years
+#2020 & 2021 are categorized as "resettled"
+#3 phases over 5 years- categories must be factors - changing years to stages
+```{r}
+OneWay_df$Stage <- plyr::mapvalues(OneWay_df$Year, from = c(2017, 2018, 2019, 2020, 2021), to = c("Stable", "Transition", "Transition", "Resettled", "Resettled"))
+```
+
+#Reorder (alphabetical originally), but we want cronological sooooo...
+```{r}
+OneWay_df$Stage <- factor(OneWay_df$Stage, levels = c("Stable", "Transition", "Resettled"))
+```
+
+```{r}
+str(OneWay_df)
+```
+
+#It is time to evaluate assumptions and check to see if the data is normally distributed
+```{r}
+psych::describe(OneWay_df)
+```
+#stage and year as descriptives but they are factors (we dont need to look at these)
+#TradP- continuous variable- skew & kurtosis
+# The skew = -1.68 (falling below 3) and kurtosis = 3.28 (falling below 8) indicating that both are below the threshold of concern (Klein, 2016)
+```{r}
+psych::pairs.panels(OneWay_df)
+```
+
+#The TradPed distribution is negatively skewed with the majority of the scores on the high end of the scale.
+
+# Shapiro-Wilks test to evaluate if the distribution of the data, within each of the sample groups, differs dramatically from a normal distribution
+```{r}
+library(tidyverse)
+shapiro <- OneWay_df %>%
+    group_by(Stage) %>%
+    rstatix::shapiro_test(TradPed)
+shapiro
+```
+#Violated the assumption of normality within each of the three grouping conditions. 
+Stable $(*W* = .843)$, $(*p* = .002)$
+Transition, $(*W* = .755)$, $(*p* < .0001)$
+Resettled, $(*W* = .812)$, $(*p* < .0001)$
+
+#Limitations- As the datasets get larger, the Shapiro-Wilks test becomes more sensitive to small deviations and therefore this a greater probability of rejecting the null hypothesis (the values come from a normal distribution). Need at least 15 cases per cell for it to be evenly balanced
+
+#Now we use Levene's to check for violations of homogeneity of variance
+#Checking to confirm that the variances within each each of the grouping variables is similar.  If in Levene's test $(*p*< .05)$ we have violated the assumption and can use Welch's formulation.
+
+
+```{r}
+car::leveneTest(TradPed ~ Stage, OneWay_df, center = mean)
+```
+Levene's- We did not violate the assumption of homogeneity of variance $(F[2, 109] = 1.681, *p* = .190)$.The variance in each of the groups is not statistically significantly different from each other. 
+We do not need to do a Welch's and we can use the regular formulation of the one way ANOVA.
+
+#Conduct omnibus ANOVA (with effect size)
+
+```{r}
+
+#install.packages("gplots")
+
+library(gplots)
+
+```
+
+
+```{r}
+gplots::plotmeans(formula = TradPed ~ Stage, data = OneWay_df, xlab = "Stage in Transition",
+    ylab = "Evaluation of Traditional Pedagogy", n.label = TRUE)
+```
+
+```{r}
+gplots::boxplot2(TradPed ~ Stage, data = OneWay_df, xlab = "Stage in Transition",
+    ylab = "Evaluation of Traditional Pedagogy", n.label = TRUE)
+```
+#One way ANOVA with effect size
+```{r}
+omnibus <- aov(TradPed ~ Stage, data = OneWay_df)
+summary(omnibus)
+```
+Omnibus one-way ANOVA was significant, $(F(2, 109) = 3.329, p = 0.039)$. 
+
+
+```{r}
+model.tables(omnibus, "means")
+```
+
+
+
+
+```{r}
+lsr::etaSquared(omnibus)
+```
+
+With a small effect size $(\eta^2 = 0.057)$ indicates moderate differences
+
+
+#Posthoc, pairwise comparisons
+
+The pairwise.t.test output provides *p* values associated with mean differences of all possible pairwise comparisons. The associated mean difference (MDiff) can be calculated manually using the actual means.
+
+We will control for Type I error by calling for Bonferroni (.05/3) to adjust the *p* values for a more conservative evaluation. 
+```{r}
+pairwise.t.test(OneWay_df$TradPed, OneWay_df$Stage, p.adj = "bonferroni")
+```
+#We did not find statistically significant differences between evaluations of the Psychometrics course between Transition and Resettled.
+
+
+We tested to see is there was substantive change in student Course Evals for Psychometrics over a 5 year period of change. The consecutive years were categorized into 3 the groups of stable (still using SPSS), transition (intro of R and increase in class size), and resettled (post R integration). We conducted a one-way analysis of variance to evaluate potential differences in course evaluations of traditional pedagogy as a function of the 3 stages. We conducted a Levene’s test to check for homogeneity of variance. The results indicated no violation of the homogeneity of variance assumption $(F[2, 109] = 1.681, *p* = .190)$
+
+Our results from the Shapiro Wilk’s test did indicate violations of the normality assumption within each of the groups (Stable $(*W* = .843)$, $(*p* = .002)$; Transition, $(*W* = .755)$, $(*p* < .0001)$; Resettled, $(*W* = .812)$, $(*p* < .0001)$). Omnibus one-way ANOVA was significant, $(F(2, 109) = 3.329, p = 0.039)$. 
+
+We then moved onto pairwise comparisons. In a series of post-hoc comparisons, there were non-significant differences between all groups. 
+Stable and transition $*Mdiff* = .20, *p* = 1.00$ 
+Transition and resettled $*Mdiff* = .07, *p* = 0.053$
+Stable and resettled $*Mdiff* = .27, *p* = 0.230$ 
+Table 1 contains means and standard deviations and complete ANOVA results are presented in Table 2. Figure 1 provides an illustration of the results.
+
+```{r}
+apaTables::apa.1way.table(iv=Stage, dv=TradPed, show.conf.interval=TRUE, data=OneWay_df, table.number=1)
+```
+
+```{r}
+4.66-4.63
+4.66-4.38
+4.63-4.38
+```
+
+```{r}
+apaTables::apa.aov.table(omnibus, table.number = 2, filename = "Table2.doc")
+```
+
+```{r}
+gplots::plotmeans(formula = TradPed ~ Stage, data = OneWay_df, xlab = "Stage in Transition",
+    ylab = "Evaluation of Traditional Pedagogy", n.label = TRUE)
+```
+The ANOVA is a limited because though the individual sample groups are large enough, they are not equivalent in size (balanced).
+
+#Power Analysis Time -> effect size
+
+```{r}
+#install.packages("effectsize")
+library(effectsize)
+```
+
+Requires effect size converted to f units
+```{r}
+effectsize::eta2_to_f(0.0575)
+```
+```{r}
+pwr::pwr.anova.test(k = 3, f = 0.247, sig.level = 0.05, power = 0.8)
+```
+
+We would need a minimum of $n=54$ per group to achieve a statistically significant effect

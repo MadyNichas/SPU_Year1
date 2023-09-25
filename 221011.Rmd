@@ -1,0 +1,149 @@
+---
+title: '221110'
+author: "Brielle & Mady"
+date: "2022-10-04"
+output: html_document
+---
+
+#Describe variables and roles in analysis (2 levels of grouping variables? are they independently scored & continuously scored?)
+#Importing data
+```{r}
+big <- readRDS ("TEPPout.rds")
+```
+
+#Trimming it to just ANOVA students
+```{r}
+JustANOVA <- subset(big, Course == "ANOVA") 
+```
+
+#Data set slimmed down to predictor + continuous DV
+```{r}
+Independent_t_df <- (dplyr::select (JustANOVA, Dept, SCRPed))
+```
+
+```{r}
+str(Independent_t_df)
+```
+
+#the dept var goes from character var to a factor
+```{r}
+Independent_t_df$Dept <- factor(Independent_t_df$Dept)
+str(Independent_t_df$Dept)
+```
+
+#let's check some stat assumptions- look at kertosis(<8) + skew (<3)
+```{r}
+psych:: describe(Independent_t_df)
+```
+
+```{r}
+#paired panel just for fun
+psych::pairs.panels(Independent_t_df)
+```
+#lookin in on homogeneity of the variance (required for t test)
+```{r}
+car::leveneTest(SCRPed ~ Dept, Independent_t_df, center = mean)
+```
+The results of Levene's test for assumption of homogeneity was not violated $(*F*[1, 101] = .77, *p* = .38)$ The variance within each department is not statistically significantly different from the variance within other deparments. 
+#(checkin for a p value here)
+
+#we've done all the checks! and we can run a student's t test
+```{r}
+lsr::independentSamplesTTest(formula = SCRPed ~ Dept, data = Independent_t_df,
+    var.equal = TRUE)
+```
+#An independent samples t-test was conducted to evaluate the hypothesis that there would be differences in course evaluation ratings of socially and culturaly responsive teaching between academic departments (CPY, IOP). The results were not significant, ($*t*(101) = -.64, *p* = .52$) with a very small effect size ($*d* = .14$). The 95% confidence interval for the difference in means ranged from -.36 to  .18. The means and standard deviations of the two sample groups and in Table 1. Figure 1 displays the results.
+
+
+```{r}
+apaTables::apa.1way.table(Dept, SCRPed, Independent_t_df)
+```
+
+```{r}
+ggpubr::ggboxplot(Independent_t_df, x = "Dept", y = "SCRPed", color = "Dept",
+    palette = c("#030080", "#909827"), add = "jitter", title = "Figure 1. Course Evaluation Ratings of Socially and Culturally Responsive Pedagogy as a Function of Department")
+```
+
+#Power analysis time!
+```{r}
+pwr::pwr.t.test(d = 0.141, n = 101, power = NULL, sig.level = 0.05,
+    type = "two.sample", alternative = "two.sided")
+```
+#17% chance of detecting an effect when there was none
+
+```{r}
+pwr::pwr.t.test(d = 0.141, n = NULL, power = 0.8, sig.level = 0.05,
+    type = "two.sample", alternative = "two.sided")
+```
+#We would need n=790 to find a statistically significant difference
+
+
+
+#The independent t-test (above) compared the course evaluations between departments, but a paired t-test (below) can allow us to look at the data for the same person in two different courses (with the same professor).
+
+```{r}
+Paired_df <-(dplyr::select (big, StndtID, Course, SCRPed))
+Paired_df <- subset(Paired_df, Course == "ANOVA" | Course == "Multivariate")      
+```
+#Use big data set and identify variables
+
+```{r}
+str(Paired_df)
+```
+```{r}
+paired_wide <- reshape2::dcast(data = Paired_df, formula =StndtID~Course, value.var = "SCRPed")
+```
+
+#reorient to wide form because we need rows converted to columns
+```{r}
+str(paired_wide)
+```
+
+#Checking for assumptions
+```{r}
+paired_wide$DIFF <- paired_wide$ANOVA - paired_wide$Multivariate
+```
+
+```{r}
+psych::describe(paired_wide)
+```
+#We check the DIFF for skew (.11) and kurtosis (2.18) which were both below the threshholds of concern identified by Klein (2016). 
+
+
+```{r}
+#paired panels for fun
+psych::pairs.panels(paired_wide)
+```
+#Looking at the paired panels can visually show us that there is a negative skew.
+
+#Now we can do a paired sample t-test
+```{r}
+lsr::pairedSamplesTTest(formula = ~ANOVA + Multivariate, data = paired_wide)
+```
+
+#The hypothesis was that there would be differences in each individual students' ratings of socially and culturally responsive pedagogy after courses in ANOVA and later in Multivariate (with the same instructor for both courses). 
+#This paired *t*-tests functions under the assumption that there is a normal distribution of the difference scores. Our paired panel displays that the data is negatively skewed. The skew (.11) and kurtosis (2.18) both fall below the threshold of concern, meaning that a paired t-test is suited.
+#The results of the paired t-test were $*t*(60) = .40, *p* = 0.69$ and therefore non-significant. The Cohen's *d* ($*d* = .05$) shows a very small effect size. Our  95% confidence interval indicates that the true mean difference falls between -.13 and .20. The means and standard deviations of the two sample groups and in Table 2. Figure 2 displays the results.
+
+```{r}
+paired_descripts <- dplyr::select(paired_wide, ANOVA, Multivariate)
+apaTables::apa.cor.table(paired_descripts, table.number = 2, filename = "Tab2_PairedV.doc")
+```
+```{r}
+ggpubr::ggpaired(paired_wide, cond1 = "ANOVA", cond2 = "Multivariate",
+    color = "condition", line.color = "gray", palette = c("npg"), xlab = "Course",
+    ylab = "Socially & Culturally Responsive Pedagogy Rating")
+```
+```{r}
+pwr::pwr.t.test(d = 0.051, n = 60, power = NULL, sig.level = 0.05,
+    type = "paired", alternative = "two.sided")
+```
+
+# 6% chance that we would find an effect when there wasnt one
+
+```{r}
+pwr::pwr.t.test(d = 0.051, n = NULL, power = 0.8, sig.level = 0.05,
+    type = "paired", alternative = "two.sided")
+```
+
+#We would need an n of over 3000 to detect a statistically signicant difference. The Cohen's *d* ($*d* = .05$) shows a very small effect size. Our  95% confidence interval indicates that the true mean difference falls between -.13 and .20 

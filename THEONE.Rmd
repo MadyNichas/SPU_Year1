@@ -1,0 +1,55 @@
+---
+title: "THEONE"
+author: "Nichas, Mady"
+date: "2022-09-15"
+output: html_document
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/Desktop/STAT")
+```
+
+```{r}
+2022-1989
+```
+
+```{r}
+# if(!require(psych)){install.packages('psych')}
+```
+```{r}
+# if(!require(tidyverse)){install.packages('tidyverse')}
+```
+```{r}
+#if(!require(knitr)){install.packages('knitr')}
+```
+
+```{r}
+set.seed(2022)
+# sample size, M and SD for each group
+Accurate <- c(rnorm(30, mean = 1.18, sd = 0.8), rnorm(30, mean = 1.83,
+    sd = 0.58), rnorm(30, mean = 1.76, sd = 0.56))
+# set upper bound for DV
+Accurate[Accurate > 3] <- 3
+# set lower bound for DV
+Accurate[Accurate < 0] <- 0
+# IDs for participants
+ID <- factor(seq(1, 90))
+# name factors and identify how many in each group; should be in same
+# order as first row of script
+COND <- c(rep("High", 30), rep("Low", 30), rep("Control", 30))
+# groups the 3 variables into a single df: ID, DV, condition
+Acc_sim30 <- data.frame(ID, COND, Accurate)
+```
+
+```{r}
+write.table(Acc_sim30, file = "to_CSV.csv", sep = ",", col.names = TRUE,
+    row.names = FALSE)
+```
+```{r}
+from_CSV <- read.csv("to_CSV.csv", header = TRUE)
+```
+```{r}
+round(psych::describe(from_CSV), 3)
+```
+

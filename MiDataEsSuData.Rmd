@@ -1,0 +1,279 @@
+---
+title: "Problem3-MiDataEsSuData"
+author: "Nichas, Mady"
+date: "2022-09-21"
+output: html_document
+---
+```{r}
+library(tidyverse)
+set.seed(123)
+Blue_mu <- c(1.52, 1.72, 2.69, 1.71, 2.14, 2.35, 2.42)
+Blue_stddev <- c(2.52, 2.04, 0.47, 0.7, 0.8, 2.41, 3.36)
+Blue_corMat <- matrix(c(1, 0.69, 0.19, 0.28, 0.32, 0.08, 0.23, 0.69, 1,
+    0.2, 0.29, 0.33, 0.13, 0.25, 0.19, 0.2, 1, 0.5, 0.5, -0.04, 0.09, 0.28,
+    0.29, 0.5, 1, 0.76, 0.04, 0.18, 0.32, 0.33, 0.5, 0.76, 1, 0.1, 0.21,
+    0.08, 0.13, -0.04, 0.04, 0.1, 1, 0.42, 0.23, 0.25, 0.09, 0.18, 0.21,
+    0.42, 1), ncol = 7)
+```
+
+
+```{r}
+Blue_covMat <- Blue_stddev %*% t(Blue_stddev) * Blue_corMat
+
+Blue_dat <- MASS::mvrnorm(n = 389, mu = Blue_mu, Sigma = Blue_covMat,empirical = TRUE)
+```
+```{r}
+ Blue_df <- as.data.frame(Blue_dat)
+```
+```{r}
+library(tidyverse)
+Blue_df <- rename(Blue_df, Sun = V1, Mon = V2, Tues = V3, Wed = V4, Thurs = V5, Fri = V6, Sat = V7)
+```
+```{r}
+Blue_df$Sun[Blue_df$Sun > 24] <- 24
+Blue_df$Sun[Blue_df$Sun < 0] <- 0
+
+Blue_df$Mon[Blue_df$Mon > 24] <- 24
+Blue_df$Mon[Blue_df$Mon < 0] <- 0
+
+Blue_df$Tues[Blue_df$Tues > 24] <- 24
+Blue_df$Tues[Blue_df$Tues < 0] <- 0
+
+Blue_df$Wed[Blue_df$Wed > 24] <- 24
+Blue_df$Wed[Blue_df$Wed < 0] <- 0
+
+Blue_df$Thurs[Blue_df$Thurs > 24] <- 24
+Blue_df$Thurs[Blue_df$Thurs < 0] <- 0
+
+Blue_df$Fri[Blue_df$Fri > 24] <- 24
+Blue_df$Fri[Blue_df$Fri < 0] <- 
+
+Blue_df$Sat[Blue_df$Sat > 24] <- 24
+Blue_df$Sat[Blue_df$Sat < 0] <- 0
+
+Blue_df$BandanaColor <- "Blue"
+```
+
+
+```{r}
+Pink_mu <- c(4.45, 3.84, 2.6, 1.84, 2.1, 2.81, 2.14)
+Pink_stddev <- c(4.22, 3.08, 0.89, 0.8, 0.81, 2.49, 3.24)
+Pink_corMat <- matrix(c(1, 0.81, 0.17, 0.15, 0.09, 0.05, -0.16, 0.81,
+    1, 0.17, 0.21, 0.11, 0.09, -0.01, 0.17, 0.17, 1, 0.59, 0.54, 0.05,
+    0.24, 0.15, 0.21, 0.59, 1, 0.72, 0.12, 0.22, 0.09, 0.11, 0.54, 0.72,
+    1, 0.21, 0.4, 0.05, 0.09, 0.05, 0.12, 0.21, 1, 0.65, -0.16, -0.01,
+    0.24, 0.22, 0.4, 0.65, 1), ncol = 7)
+Pink_covMat <- Pink_stddev %*% t(Pink_stddev) * Pink_corMat
+Pink_dat <- MASS::mvrnorm(n = 133, mu = Pink_mu, Sigma = Pink_covMat,
+    empirical = TRUE)
+Pink_df <- as.data.frame(Pink_dat)
+Pink_df <- rename(Pink_df, Sun = V1, Mon = V2, Tues = V3, Wed = V4,
+    Thurs = V5, Fri = V6, Sat = V7)
+```
+
+
+```{r}
+
+# set upper and lower bound for each variable
+Pink_df$Sun[Pink_df$Sun > 24] <- 24
+Pink_df$Sun[Pink_df$Sun < 0] <- 0
+
+Pink_df$Mon[Pink_df$Mon > 24] <- 24
+Pink_df$Mon[Pink_df$Mon < 0] <- 0
+
+Pink_df$Tues[Pink_df$Tues > 24] <- 24
+Pink_df$Tues[Pink_df$Tues < 0] <- 0
+
+Pink_df$Wed[Pink_df$Wed > 24] <- 24
+Pink_df$Wed[Pink_df$Wed < 0] <- 0
+
+Pink_df$Thurs[Pink_df$Thurs > 24] <- 24
+Pink_df$Thurs[Pink_df$Thurs < 0] <- 0
+
+Pink_df$Fri[Pink_df$Fri > 24] <- 24
+Pink_df$Fri[Pink_df$Fri < 0] <- 0
+
+Pink_df$Sat[Pink_df$Sat > 24] <- 
+Pink_df$Sat[Pink_df$Sat < 0] <- 0
+
+Pink_df$BandanaColor <- "Pink"
+
+```
+```{r}
+Purple_mu <- c(1.56, 2.34, 2.69, 1.81, 2.17, 3.47, 2.69)
+Purple_stddev <- c(2.46, 2.49, 0.86, 0.71, 0.78, 2.59, 3.76)
+Purple_corMat <- matrix(c(1, 0.78, 0.27, 0.36, 0.42, -0.06, 0.08, 0.78,
+    1, 0.33, 0.26, 0.35, -0.11, -0.02, 0.27, 0.33, 1, 0.62, 0.64, -0.04,
+    0.15, 0.36, 0.26, 0.62, 1, 0.81, -0.08, 0.17, 0.42, 0.35, 0.64, 0.81,
+    1, -0.06, 0.15, -0.06, -0.11, -0.04, -0.08, -0.06, 1, 0.6, 0.08, -0.02,
+    0.15, 0.17, 0.15, 0.6, 1), ncol = 7)
+Purple_covMat <- Purple_stddev %*% t(Purple_stddev) * Purple_corMat
+Purple_dat <- MASS::mvrnorm(n = 182, mu = Purple_mu, Sigma = Purple_covMat,
+    empirical = TRUE)
+Purple_df <- as.data.frame(Purple_dat)
+Purple_df <- rename(Purple_df, Sun = V1, Mon = V2, Tues = V3, Wed = V4,
+    Thurs = V5, Fri = V6, Sat = V7)
+Purple_df$Sun[Purple_df$Sun > 24] <- 24
+Purple_df$Sun[Purple_df$Sun < 0] <- 0
+
+Purple_df$Mon[Purple_df$Mon > 24] <- 24
+Purple_df$Mon[Purple_df$Mon < 0] <- 0
+
+Purple_df$Tues[Purple_df$Tues > 24] <- 24
+Purple_df$Tues[Purple_df$Tues < 0] <- 0
+
+Purple_df$Wed[Purple_df$Wed > 24] <- 24
+Purple_df$Wed[Purple_df$Wed < 0] <- 0
+
+Purple_df$Thurs[Purple_df$Thurs > 24] <- 24
+Purple_df$Thurs[Purple_df$Thurs < 0] <- 0
+
+Purple_df$Fri[Purple_df$Fri > 24] <- 24
+Purple_df$Fri[Purple_df$Fri < 0] <- 0
+
+Purple_df$Sat[Purple_df$Sat > 24] <- 24
+Purple_df$Sat[Purple_df$Sat < 0] <- 0
+
+Purple_df$BandanaColor <- "Purple"
+
+```
+```{r}
+Bandana_sim_df <- bind_rows(Blue_df, Pink_df, Purple_df)
+```
+```{r}
+saveRDS(Bandana_sim_df, 'Bandana_RDS.rds')
+```
+```{r}
+df <- readRDS('Bandana_RDS.rds')
+```
+```{r}
+str(df)
+```
+```{r}
+library(tidyverse)
+df <- df %>%
+    dplyr::mutate(BandanaColor = as.factor(BandanaColor))
+```
+```{r}
+str(df)
+```
+
+```{r}
+ggpubr::gghistogram(df$Sun, xlab="Negative Affect", ylab = "Frequency", add = "mean", rug=TRUE, color = "#00BFBB")
+
+```
+```{r}
+Blue <- c(1.52, 1.52, 2.69, 1.71, 2.14, 2.35, 2.42)
+Blue <- as.data.frame(Blue)
+mean(Blue$Blue, na.rm = TRUE)
+```
+```{r}
+median(Blue$Blue, na.rm = TRUE)
+
+```
+
+```{r}
+lsr::modeOf(Blue$Blue)
+```
+```{r}
+ggpubr::gghistogram(df$Sat, xlab="Negative Affect", ylab = "Frequency", add = "mean", rug=TRUE, color = "#00AFBB")
+```
+```{r}
+min(Blue$Blue, na.rm = TRUE)
+max(Blue$Blue, na.rm = TRUE)
+range(Blue$Blue, na.rm = TRUE)
+```
+
+```{r}
+min(df$Mon, na.rm = TRUE)
+max(df$Mon, na.rm = TRUE)
+range(df$Mon, na.rm = TRUE)
+```
+```{r}
+quantile(df$Mon, probs = c(0.25, 0.75))
+```
+
+```{r}
+3.73-.53
+```
+
+```{r}
+IQR(df$Mon, na.rm = TRUE)
+```
+
+```{r}
+Blue$mean <- mean(Blue$Blue, na.rm = TRUE)
+head(Blue)
+```
+
+```{r}
+Blue$mdev <- Blue$Blue - Blue$mean
+head(Blue)
+```
+```{r}
+round(sum(Blue$mdev, na.rm = TRUE), 3)
+round(mean(Blue$mdev, na.rm = TRUE), 3)
+```
+
+```{r}
+Blue$abslt_m <- abs(Blue$mdev)
+head(Blue)
+```
+```{r}
+round(mean(Blue$abslt_m, na.rm = TRUE), 3)
+```
+```{r}
+library(tidyverse)
+df_3vars <- df %>%
+    dplyr::select(Tues, Wed, Thurs)
+```
+```{r}
+psych::describe(df_3vars)
+```
+```{r}
+library(tidyverse)
+
+df4corr <- df %>%
+    dplyr::select(Tues, Wed)
+
+head(df4corr)
+```
+```{r}
+df4corr$MDTues <- df4corr$Tues - mean(df4corr$Tues)
+
+df4corr$MDWed <- df4corr$Wed - mean(df4corr$Wed)
+
+head(df4corr)
+```
+```{r}
+df4corr$crossproductXY <- df4corr$MDTues * df4corr$MDWed
+head(df4corr)
+sum(df4corr$crossproductXY)
+```
+
+```{r}
+cov <- 1/(nrow(df4corr) - 1) * sum(df4corr$crossproductXY)
+cov
+```
+```{r}
+cov/(sd(df4corr$Tues) * sd(df4corr$Wed))
+```
+
+```{r}
+cor.test(df4corr$Tues, df4corr$Wed)
+```
+
+```{r}
+psych::pairs.panels(df_3vars, pch = ".")
+```
+```{r}
+Table1_Cor <- apaTables::apa.cor.table(df_3vars, filename = "Table1_Cor.doc",
+    table.number = 1, show.conf.interval = FALSE, landscape = TRUE)
+```
+
+```{r}
+print(Table1_Cor)
+
+```
+Preliminary Results
+Our sample included 704 observations identified by the day of the week (Sun, Mon, Tues, Wed, Thurs, Fri, Sat) and amount of time each color bandana was worn. Visual inspection of the three variables of interest (Tues, Wed, Thurs) combined with formal evaluation of skewness and kurtosis suggested that their distributions did not violate the assumption of univariate normality. Means, standard deviations, and a correlation matrix are presented in Table 1. We noted that the correlation between Tues and Thurs was strong (r = 0.76); correlations between remaining variables were smaller but still moderate.

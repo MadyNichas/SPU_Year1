@@ -1,0 +1,52 @@
+---
+title: "22.10.04"
+author: "Nichas, Mady"
+date: "2022-09-27"
+output: html_document
+---
+```{r}
+big <- readRDS("TEPPout.rds")
+```
+
+```{r}
+JustANOVA <- subset ( big, Course =="ANOVA")
+```
+
+
+```{r}
+str(JustANOVA$OvInstructor)
+```
+
+```{r}
+psych::describe(JustANOVA$OvInstructor)
+```
+
+#comparing to CPY
+```{r}
+lsr::oneSampleTTest (x=JustANOVA$OvInstructor, mu=4.4)
+```
+# Compare to Org
+```{r}
+lsr::oneSampleTTest ( x = JustANOVA$OvInstructor, mu =4.1)
+```
+```{r}
+ggpubr::ggboxplot (JustANOVA$OvInstructor, ylab = "Course Evaluation Ratings", xlab = FALSE, add="jitter", title = "Figure 1. Overall Instructor Ratings for ANOVA")
+```
+
+```{r}
+pwr::pwr.t.test(d=.211, n=114, power = NULL, sig.level = 0.05, type = "one.sample", alternative = "two.sided")
+```
+      
+
+```{r}
+pwr::pwr.t.test(d=.085, n=114, power = NULL, sig.level = 0.05, type = "one.sample", alternative = "two.sided")
+```
+                
+                
+```{r}
+pwr::pwr.t.test(d=0.085, n=NULL, power = 0.8, sig.level = 0.05, type = "one.sample", alternative = "two.sided")
+```
+
+1. CPY- A one-sample t-test was used to evaluate whether the Overall Instructor ratings from the CPY students were statistically significantly different from the Overall ratings. The sample mean 4.19 (*SD* = 1.01) was significantly different from 4.4 $t(112)=-2.25,p=.027$. The effect size, (*d*=.21) indicates a small effect.
+Two-sided 95% confidence interval (4.00, 4.38) indicates that we are 95% confident that the mean lies within this range.
+2. ORG- A one-sample t-test was used to evaluate whether the Overall Instructor ratings from the ORG students were statistically significantly different from the Overall ratings. The sample mean 4.19 (*SD* = 1.01) was not significantly different from 4.4 $t(112)=.09,p=.37$.  Results are not significant (*p* = .37) and the effect size, (*d*=.09) indicates no effect. 

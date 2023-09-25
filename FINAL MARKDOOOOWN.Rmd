@@ -1,0 +1,223 @@
+---
+title: "Final"
+author: "Mads"
+date: '2022-11-07'
+output:
+  word_document: default
+  html_document: default
+---
+
+#Simulating Data for a Mixed Design 2 X 3 ANOVA 
+Two types of students will evaluate stress levels at three different time points
+#Each person has three waves
+Measures and Methods
+$n=38$ Graduate students(GR) and Undergraduate students(UG) at SPU completed a survey on Likert style scale of 1(not at all) - 7(very much) evaluating stress levels before(Pre), immediately after(Post), and 1 week post(WeekPost) a 30 minute meditation training/session.
+Within-subjects factor:  before(Pre), immediately after(Post), and 1 week post(WeekPost)
+Between-subjects factor: Graduate students(GR) and Undergraduate students(UG)
+Continuous DV: Stress- "an imbalance between environmental supply and individual needs" (Elo, et al., 2003, p. 444)
+Single-item Measure: “Stress means a situation in which a person feels tense, restless, nervous or anxious or is unable to sleep at night because their mind is troubled all the time. Do you feel this kind of stress these days?” (Elo, et al., 2003, p. 446)
+Likert scale of 1(not at all) - 7(very much)
+
+Hypothesis:
+The stress scores of Graduate students will not be statistically significantly different from Undergraduate scores at any stage
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+set.seed(221108)
+
+Stress <- round(c(rnorm(20, mean = 6.41, sd = 1.08), 
+              rnorm(20, mean = 3.14, sd = 1.60),
+              rnorm(20, mean = 4.00, sd = 1.19), 
+              rnorm(20, mean = 5.04, sd = 1.10),
+              rnorm(20, mean = 3.11, sd = 1.07),
+              rnorm(20, mean = 4.45, sd = 1.11)), 3)
+rowID <- factor(seq(1, 120))
+ID <- rep((1:40), 3) 
+Stage <- c(rep("Pre", 20), rep("Post", 20), rep("WeekPost",20))
+StudentType <- c(rep("UG", 20), rep("GR", 20), rep("UG", 20), rep("GR", 20), rep("UG", 20), rep("GR", 20))
+
+# groups the 3 variables into a single df: ID#, DV, condition
+MIXEDdf <- data.frame(ID, Stage, StudentType, Stress)
+
+```
+
+#Write simulated data as a .csv 
+```{r}
+write.table(MIXEDdf, file='MIXEDdf.csv', sep=',', col.names=TRUE, row.names=FALSE) 
+
+```
+
+#Bring back the simulated data from the .csv file 
+```{r}
+MIXEDdf <- read.csv('MIXEDdf.csv', header = TRUE)
+```
+
+#Time to check the structure
+```{r}
+str(MIXEDdf)
+```
+
+```{r}
+MIXEDdf$ID <- factor(MIXEDdf$ID, c(1:120))
+MIXEDdf$StudentType <- factor(MIXEDdf$StudentType, levels = c("UG","GR"))
+MIXEDdf$Stage <- factor(MIXEDdf$Stage, levels = c("Pre", "Post", "WeekPost"))
+
+str(MIXEDdf)
+```
+
+#Let run some descriptive statistics, take a look at it visually, and check assumptions
+```{r}
+psych::describeBy(Stress ~Stage + StudentType, data = MIXEDdf, mat=TRUE)
+```
+Across all 6 conditions:
+
+* No skew exceeds the threshholds of concern (>3; Kline [2016])
+* No kurtosis exceeds the threshholds of concern (>8; Kline [2016])
+
+#Taking a look with a box plot
+```{r}
+ggpubr::ggboxplot(MIXEDdf, x = "Stage", y = "Stress", color = "StudentType",
+    palette = "jco", xlab = "Stage", ylab = "Stress",
+    )
+```
+
+#I like looking at it both ways, ok?
+```{r}
+ggpubr::ggboxplot(MIXEDdf, x = "StudentType", y = "Stress", color = "Stage",
+    palette = "jco", xlab = "StudentType", ylab = "Stress",
+    )
+```
+
+
+```{r}
+mixtWIDE_df <- reshape2::dcast(data = MIXEDdf, formula = ID + StudentType ~ Stage,
+    value.var = c("Stress"))
+str(mixtWIDE_df)
+```
+
+```{r}
+mixtLONG_df <- (data.table::melt(mixtWIDE_df, id.vars = c("ID", "StudentType"), measure.vars = c("Pre", "Post", "WeekPost")))
+#This process  does not preserve the variable names, so we need to rename them
+mixtLONG_df<-  dplyr::rename(mixtLONG_df, Stage = "variable", Stress = "value")
+
+#rechecking structure to make sure we didn't lose anything in the restructuring
+str(mixtLONG_df)
+```
+
+
+```{r}
+mixtLONG_df %>%
+    group_by(Stage, StudentType) %>%
+    rstatix::identify_outliers(Stress)
+```
+3 outliers, 0 at the extreme level
+
+
+Shapiro-Wilk's test of the assumption of normality
+```{r}
+mixtLONG_df %>%
+    group_by(Stage, StudentType) %>%
+    rstatix::shapiro_test(Stress)
+```
+At each level of the Stage IV, we have not violated the assumption of normality
+That is $p > 0.05$ for Stress in Pre, Post, and WeekPost for both undergraduate (UG) and graduate (GR) students
+
+QQ plots 
+```{r}
+ggpubr::ggqqplot(mixtLONG_df, "Stress", ggtheme = theme_bw()) + facet_grid(Stage ~
+    StudentType)
+```
+
+
+Check for homogeneity of variance with Levene's 
+```{r}
+mixtLONG_df %>%
+    group_by(Stage) %>%
+    rstatix::levene_test(Stress ~ StudentType)
+```
+Levene’s test indicated no violation of this assumption between the UG and GR students in any of the conditions:  Pre $(F [1, 38] = 0.085, p = .772)$; Post $(F [1, 38] = 3.076, p = .088)$; and WeekPost $(F[1, 38] = 2.225, p = .144)$.
+
+
+ANOVA time!
+```{r}
+mixtLONG_df
+rstatix::anova_test(data = mixtLONG_df, dv = Stress, wid = ID,
+    between = StudentType, within = Stage)
+```
+* StudentType effect: $F(1, 38) = 0.578, p = 0.452, \eta^2 = 0.004$ 
+* Stage effect: $F(2, 76) = 32.530, p < 0.001, \eta^2 = 0.379$ *Large effect size
+* Interaction effect: $F(2, 76) = 2.115, p = 0.128, \eta^2 = 0.038$ 
+
+
+```{r}
+mixtLONG_df %>%
+    group_by(Stage) %>%
+    rstatix::anova_test(dv = Stress, wid = ID, between = StudentType) %>%
+    rstatix::get_anova_table() %>%
+    rstatix::adjust_pvalue(method = "bonferroni")
+```
+We followed the significant main effect with an evaluation of simple main effects within Stage. 
+There was a statistically significant difference between StudentType at Pre ($F[1, 38] = 6.178, p = 0.017, \eta^2 = 0.140$)* with a large effect size. There were non-statistically significant difference between StudentType at Post $(F[1, 38] = 0.618, p = 0.437, \eta^2 = 0.016)$ and WeekPost ($F[1, 38] = 0.000, p = 0.995, \eta^2 = 0.000$).
+
+
+#Power
+#Use the eta2_to_f() function to translate the $\eta^2$ associated with the interaction effect to Cohen’s f.
+
+```{r}
+
+effectsize::eta2_to_f(0.379) 
+```
+
+```{r}
+WebPower::wp.rmanova(n=47, ng=2, nm=3, f = 0.781, nscor = .972, alpha = .05, power = NULL, type = 2)
+```
+We were at 99% power to detect a statistically significant difference had there been one (we like to be around 80% power).
+
+```{r}
+WebPower::wp.rmanova(n=NULL, ng=2, nm=3, f = 0.781, nscor = .972, alpha = .05, power = .8, type = 2)
+```
+We would have needed 18 cases to achieve statistical significance.  
+
+A 2 X 3 ANOVA was conducted with two types of students to evaluate stress levels at three different time points. Graduate students(GR) and Undergraduate students(UG) at SPU completed a survey on Likert style scale of 1(not at all) - 7(very much) evaluating stress levels before(Pre), immediately after(Post), and 1 week post(WeekPost) a 30 minute meditation training/session. Stress is defined as "an imbalance between environmental supply and individual needs" (Elo, et al., 2003, p. 444) and will be measured using a single-item measure: “Stress means a situation in which a person feels tense, restless, nervous or anxious or is unable to sleep at night because their mind is troubled all the time. Do you feel this kind of stress these days?” (Elo, et al., 2003, p. 446).
+
+Mixed design ANOVA has a number of assumptions related to both the within-subjects and between-subjects elements. Data are expected to be normally distributed at each level of design. Visual inspection of boxplots for each wave of the design, assisted by the rstatix::identify_outliers() function (which reports values above Q3 + 1.5xIQR or below Q1 - 1.5xIQR, where IQR is the interquartile range) indicated 3 outliers with 0 of these at the extreme level. 
+
+All skew values were at or below the absolute value of 0.567 and all kurtosis values were below the absolute value of 1.59 (Kline, 2016). The Shapiro-Wilks test was applied at each level of the Stage, we have not violated the assumption of normality. That is $p > 0.05$ for Stress in Pre, Post, and WeekPost for both undergraduate (UG) and graduate (GR) students
+Because of the between-subjects aspect of the design, the homogeneity of variance assumption was evaluated. Levene’s test indicated no violation of this assumption between the UG and GR students in any of the conditions:  Pre $(F [1, 38] = 0.085, p = .772)$; Post $(F [1, 38] = 3.076, p = .088)$; and WeekPost $(F[1, 38] = 2.225, p = .144)$.
+
+Our ANOVA yielded a non significant interaction effect ($F[2, 76] = 2.115, p = 0.128, \eta^2 = 0.038$), a statistically significant main effect for stage ($F[2, 76] = 32.530, p < 0.001, \eta^2 = 0.379$), and a non statistically significant main effect for studenttype ($F[1, 38] = 0.578, p = 0.452, \eta^2 = 0.004$)
+* Stage effect: $F(2, 76) = 32.530, p < 0.001, \eta^2 = 0.379$ *Large effect size
+Mauchly's test indicated no violation of the sphericity assumption $(W = 0.968, p = 0.548)$.
+Bonferroni adjusted p-value= 0.051 While this technically not significant, it is very close.
+
+We followed up a statistically significant main effect with pairwise comparisons. 
+We found statistically significant differences within all three combination pairs. We detected  statistical significance within pre and post $(Mdiff = 2.22, p < .001)$, post and weekpost  $(Mdiff = -1.31, p < .01)$, and pre and weekpost $(Mdiff = 0.916, p < .001)$. For both graduate and undergraduate students, stress levels dropped from pre to post, but increased between post and weekpost. 
+
+
+
+```{r}
+pairwise.t.test(mixtLONG_df$Stress, mixtLONG_df$Stage, p.adj = "bonferroni")
+```
+
+```{r}
+psych::describe.by(mixtLONG_df$Stress, mixtLONG_df$Stage, mat= TRUE)
+```
+```{r}
+#Pre - Post
+5.27-3.05
+#Post - WeekPost
+3.046-4.356
+#Pre - WeekPost
+5.272-4.356
+```
+
+
+References
+Elo, A.-L., Leppänen, A., & Jahkola, A. (2003). Validity of a single-item measure of stress symptoms. Scandinavian Journal of Work, Environment & Health, 29(6), 444–451. http://www.jstor.org/stable/40967322
+
+
+
+
+
+
